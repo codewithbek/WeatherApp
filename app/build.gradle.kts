@@ -12,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.example.weatherapp"
         minSdk = 21
-        targetSdk = 32
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -52,16 +52,16 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui)  // Ensure this is the correct Android Compose UI dependency
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.ui.desktop)
+    // Remove the following line
+    // implementation(libs.androidx.ui.desktop)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -73,18 +73,17 @@ dependencies {
     // Splash Screen
     implementation(libs.androidx.core.splashscreen)
 
-    //Dagger - Hilt
-//    implementation(libs.hilt.android)
-//    implementation(libs.androidx.hilt.lifecycle.viewmodel)
-//    implementation(libs.androidx.hilt.navigation.compose)
-//    kapt(libs.artifactid)
-//    implementation(libs.hilt.android)
-//    kapt(libs.hilt.android.compiler)
-//    implementation( libs.androidx.hilt.lifecycle.viewmodel)
-//    kapt( libs.androidx.hilt.compiler)
-//    implementation (libs.androidx.hilt.navigation.compose)
+    // Dagger - Hilt (if you're using it)
+    // Uncomment if you want to use Hilt
+    /*
+    implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel)
+    implementation(libs.androidx.hilt.navigation.compose)
+    kapt(libs.hilt.android.compiler)
+    */
 
-
+    implementation(libs.ui)
+    implementation(libs.material3)
 
     // Location Services
     implementation(libs.play.services.location)
@@ -94,7 +93,5 @@ dependencies {
     implementation(libs.converter.moshi)
     implementation(libs.logging.interceptor)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-
-
-
 }
+

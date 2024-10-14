@@ -1,5 +1,6 @@
 package com.example.weatherapp.presentation.home_page.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
@@ -21,30 +23,38 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.weatherapp.R
+import com.example.weatherapp.domain.weather.WeatherData
+import com.example.weatherapp.presentation.home_page.WeatherViewModel
 import com.example.weatherapp.presentation.theme.CAAA5A5
 import com.example.weatherapp.presentation.theme.colorStops
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
-fun DrawerContent(scope: CoroutineScope, drawerState: DrawerState) {
+fun DrawerContent(
+    viewModel: WeatherViewModel, scope: CoroutineScope, drawerState: DrawerState,
+) {
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -53,7 +63,11 @@ fun DrawerContent(scope: CoroutineScope, drawerState: DrawerState) {
     ) {
         DrawerHeader()
         Spacer(modifier = Modifier.height(32.dp))
-        SavedLocationsList(scope, drawerState)
+        SavedLocationsList(
+            scope, drawerState,
+            cityWeatherData = viewModel.state.cityWeatherData,
+            onCitySelected = { city -> viewModel.onCitySelected(city) }
+        )
         FilledTonalButtonExample(onClick = {})
         Spacer(modifier = Modifier.height(50.dp))
     }
@@ -86,31 +100,47 @@ fun DrawerHeader() {
 }
 
 @Composable
-fun SavedLocationsList(scope: CoroutineScope, drawerState: DrawerState) {
+fun SavedLocationsList(
+    scope: CoroutineScope,
+    drawerState: DrawerState,
+    cityWeatherData: Map<String, WeatherData>, // Make sure this is defined correctly
+    onCitySelected: (String) -> Unit,
+) {
     LazyColumn(
         contentPadding = PaddingValues(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        items(3) {
-            LocationCard(scope, drawerState, "Paris", "Clear", "56%", "4.12km/h", 24)
+        // Use the keys from the map to display weather data
+        items(cityWeatherData.keys.toList()) { city -> // This should be a String
+            val weatherData = cityWeatherData[city]
+            if (weatherData != null) {
+                LocationCard(
+                    scope = scope,
+                    drawerState = drawerState,
+                    cityName = city,  // city is a String
+                    weatherData = weatherData,
+                    onCitySelected = { onCitySelected(city) }  // Pass the selected city
+                )
+            }
         }
     }
 }
+
+
 @Composable
 fun LocationCard(
     scope: CoroutineScope,
     drawerState: DrawerState,
     cityName: String,
-    weather: String,
-    humidity: String,
-    wind: String,
-    temperature: Int,
+    weatherData: WeatherData,
+    onCitySelected: (String) -> Unit,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = CAAA5A5.copy(0.5f)),
         onClick = {
+            onCitySelected(cityName)
             scope.launch {
-                drawerState.apply { if (isClosed) open() else close() }
+                drawerState.close()
             }
         },
         shape = RoundedCornerShape(24.dp),
@@ -126,16 +156,15 @@ fun LocationCard(
                     text = cityName,
                     color = Color.White,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.W700,
-                    modifier = Modifier.shadow(
-                        elevation = 4.dp,
-                        shape = RectangleShape,
-                        ambientColor = Color.Black.copy(alpha = 0.25f),
-                        spotColor = Color.Black.copy(alpha = 0.25f)
-                    )
+                    fontWeight = FontWeight.W700
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = weather, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.W500)
+                Text(
+                    text = weatherData.weatherType.weatherDesc,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.W500
+                )
                 Spacer(modifier = Modifier.height(22.dp))
                 Row {
                     Text(
@@ -145,7 +174,12 @@ fun LocationCard(
                         fontWeight = FontWeight.W300
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = humidity, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.W400)
+                    Text(
+                        text = "${weatherData.humidity}%",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.W400
+                    )
                 }
                 Row {
                     Text(
@@ -155,22 +189,26 @@ fun LocationCard(
                         fontWeight = FontWeight.W300
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = wind, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.W400)
+                    Text(
+                        text = "${weatherData.windSpeed} km/h",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.W400
+                    )
                 }
             }
             Spacer(modifier = Modifier.weight(1f))
             Column(horizontalAlignment = Alignment.End) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Icon(
-                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_snowy),
+                Spacer(modifier = Modifier.height(20.dp))
+                Image(
+                    painter = painterResource(id = weatherData.weatherType.iconRes),
                     contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.width(48.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Row {
                     Text(
-                        text = temperature.toString(),
+                        text = "${weatherData.temperatureCelsius}",
                         color = Color.White,
                         fontSize = 48.sp,
                         fontWeight = FontWeight.W500
